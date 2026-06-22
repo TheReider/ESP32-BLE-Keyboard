@@ -13,6 +13,7 @@ This section lists the changes made in this fork, one entry per commit.
 
 1. **Changed keyboard_id maximum to support F13 - F24**
 2. **Added BLEServer pointer as member class to deinitialize BLE (close bluetooth connection) with end()**
+3. **Dynamically adjust datatype from std::String to String if the ESP32-Arduino-Core is above v3.x (tested for 3.3.10)**
 
 
 

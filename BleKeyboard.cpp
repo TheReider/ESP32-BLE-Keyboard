@@ -1,5 +1,7 @@
 #include "BleKeyboard.h"
 
+#include <string>
+
 #if defined(USE_NIMBLE)
 #include <NimBLEDevice.h>
 #include <NimBLEServer.h>
@@ -15,6 +17,13 @@
 #include "HIDTypes.h"
 #include <driver/adc.h>
 #include "sdkconfig.h"
+
+// ESP32-Arduino-Core >= 3.x uses String in the BLE API, older versions use std::string
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+  #define BLE_STRING(name) String((name).c_str())
+#else
+  #define BLE_STRING(name) (name)
+#endif
 
 
 #if defined(CONFIG_ARDUHAL_ESP_LOG)
@@ -99,12 +108,12 @@ BleKeyboard::BleKeyboard(std::string deviceName, std::string deviceManufacturer,
     : hid(0)
     , pServer(nullptr)
     , deviceName(std::string(deviceName).substr(0, 15))
-    , deviceManufacturer(std::string(deviceManufacturer).substr(0,15))
+    , deviceManufacturer(std::string(deviceManufacturer).substr(0, 15))
     , batteryLevel(batteryLevel) {}
 
 void BleKeyboard::begin(void)
 {
-  BLEDevice::init(deviceName);
+  BLEDevice::init(BLE_STRING(deviceName));
   this->pServer = BLEDevice::createServer();
   this->pServer->setCallbacks(this);
 
@@ -115,7 +124,7 @@ void BleKeyboard::begin(void)
 
   outputKeyboard->setCallbacks(this);
 
-  hid->manufacturer()->setValue(deviceManufacturer);
+  hid->manufacturer()->setValue(BLE_STRING(deviceManufacturer));
 
   hid->pnp(0x02, vid, pid, version);
   hid->hidInfo(0x00, 0x01);
@@ -179,7 +188,7 @@ void BleKeyboard::setBatteryLevel(uint8_t level) {
 
 //must be called before begin in order to set the name
 void BleKeyboard::setName(std::string deviceName) {
-  this->deviceName = deviceName;
+  this->deviceName = std::string(deviceName).substr(0, 15);
 }
 
 /**
