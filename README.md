@@ -1,5 +1,27 @@
 # ESP32 BLE Keyboard library
 
+**This is a fork of [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard).**
+
+The original upstream project has not seen active development for a long time. This fork was created to continue maintenance and development independently.
+
+For the original project and its full history, please visit the original repository (full URL: https://github.com/T-vK/ESP32-BLE-Keyboard )
+
+
+## Changes
+
+This section lists the changes made in this fork, one entry per commit.
+
+- *(none yet)*
+
+
+---
+<br><br><br>
+
+
+## Original README (Upstream Documentation)
+
+>The rest of this document is the original README from the upstream project. It is kept here for reference because the API, installation instructions, examples and feature descriptions still apply to this fork.
+
 This library allows you to make the ESP32 act as a Bluetooth Keyboard and control what it does.  
 You might also be interested in:
 - [ESP32-BLE-Mouse](https://github.com/T-vK/ESP32-BLE-Mouse)
