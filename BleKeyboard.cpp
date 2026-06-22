@@ -95,8 +95,9 @@ static const uint8_t _hidReportDescriptor[] = {
   END_COLLECTION(0)                  // END_COLLECTION
 };
 
-BleKeyboard::BleKeyboard(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel) 
+BleKeyboard::BleKeyboard(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel)
     : hid(0)
+    , pServer(nullptr)
     , deviceName(std::string(deviceName).substr(0, 15))
     , deviceManufacturer(std::string(deviceManufacturer).substr(0,15))
     , batteryLevel(batteryLevel) {}
@@ -104,10 +105,10 @@ BleKeyboard::BleKeyboard(std::string deviceName, std::string deviceManufacturer,
 void BleKeyboard::begin(void)
 {
   BLEDevice::init(deviceName);
-  BLEServer* pServer = BLEDevice::createServer();
-  pServer->setCallbacks(this);
+  this->pServer = BLEDevice::createServer();
+  this->pServer->setCallbacks(this);
 
-  hid = new BLEHIDDevice(pServer);
+  hid = new BLEHIDDevice(this->pServer);
   inputKeyboard = hid->inputReport(KEYBOARD_ID);  // <-- input REPORTID from report map
   outputKeyboard = hid->outputReport(KEYBOARD_ID);
   inputMediaKeys = hid->inputReport(MEDIA_KEYS_ID);
@@ -134,9 +135,9 @@ void BleKeyboard::begin(void)
   hid->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
   hid->startServices();
 
-  onStarted(pServer);
+  onStarted(this->pServer);
 
-  advertising = pServer->getAdvertising();
+  advertising = this->pServer->getAdvertising();
   advertising->setAppearance(HID_KEYBOARD);
   advertising->addServiceUUID(hid->hidService()->getUUID());
   advertising->setScanResponse(false);
@@ -146,8 +147,24 @@ void BleKeyboard::begin(void)
   ESP_LOGD(LOG_TAG, "Advertising started!");
 }
 
-void BleKeyboard::end(void)
-{
+void BleKeyboard::end(void) {
+  if (this->pServer == nullptr) {
+    return;
+  }
+
+  if (this->advertising != nullptr) {
+    this->advertising->stop();
+  }
+
+  BLEDevice::deinit(true);
+
+  this->connected = false;
+  this->pServer = nullptr;
+  this->hid = nullptr;
+  this->inputKeyboard = nullptr;
+  this->outputKeyboard = nullptr;
+  this->inputMediaKeys = nullptr;
+  this->advertising = nullptr;
 }
 
 bool BleKeyboard::isConnected(void) {

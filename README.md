@@ -12,6 +12,7 @@ For the original project and its full history, please visit the original reposit
 This section lists the changes made in this fork, one entry per commit.
 
 1. **Changed keyboard_id maximum to support F13 - F24**
+2. **Added BLEServer pointer as member class to deinitialize BLE (close bluetooth connection) with end()**
 
 
 

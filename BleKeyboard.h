@@ -136,6 +136,7 @@ private:
   BLECharacteristic* outputKeyboard;
   BLECharacteristic* inputMediaKeys;
   BLEAdvertising*    advertising;
+  BLEServer*         pServer;
   KeyReport          _keyReport;
   MediaKeyReport     _mediaKeyReport;
   std::string        deviceName;
