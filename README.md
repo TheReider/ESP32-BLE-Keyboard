@@ -14,8 +14,19 @@ This section lists the changes made in this fork, one entry per commit.
 1. **Changed keyboard_id maximum to support F13 - F24**
 2. **Added BLEServer pointer as member class to deinitialize BLE (close bluetooth connection) with end()**
 3. **Dynamically adjust datatype from std::String to String if the ESP32-Arduino-Core is above v3.x (tested for 3.3.10)**
+   - A release `v0.3.3` was created after this change.
+4. **[BREAKING] Reworked media key handling**
+   - Media keys now use real HID usage codes instead of bitmask values.
+   - `MediaKey` is now an 16-bit integer.
+   - `press()` / `release()` / `write()` for media keys now take a `MediaKey` (single usage code) instead of a `MediaKeyReport`.
+   - Media key size didn't changed (from 2 bytes bitmask to 2 bytes usage code).
 
+## Migration
 
+If you are upgrading from the original upstream library or from this fork before the media key rework, note the following API changes:
+
+- Use the existing constants like `KEY_MEDIA_PLAY_PAUSE`, `KEY_MEDIA_VOLUME_UP`, etc. unchanged.
+- `MediaKeyReport` no longer exists, use `MediaKey` instead.
 
 ---
 <br><br><br>
@@ -23,7 +34,7 @@ This section lists the changes made in this fork, one entry per commit.
 
 ## Original README (Upstream Documentation)
 
->The rest of this document is the original README from the upstream project. It is kept here for reference because the API, installation instructions, examples and feature descriptions still apply to this fork.
+> The rest of this document is the original README from the upstream project. It is kept here for reference. Some sections, especially regarding media keys, may be outdated due to breaking changes in this fork.
 
 This library allows you to make the ESP32 act as a Bluetooth Keyboard and control what it does.  
 You might also be interested in:

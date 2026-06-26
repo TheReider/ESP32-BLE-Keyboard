@@ -28,10 +28,10 @@
 
 #include "Print.h"
 
-#define BLE_KEYBOARD_VERSION "0.0.4"
+#define BLE_KEYBOARD_VERSION "0.4.0"
 #define BLE_KEYBOARD_VERSION_MAJOR 0
-#define BLE_KEYBOARD_VERSION_MINOR 0
-#define BLE_KEYBOARD_VERSION_REVISION 4
+#define BLE_KEYBOARD_VERSION_MINOR 4
+#define BLE_KEYBOARD_VERSION_REVISION 0
 
 const uint8_t KEY_LEFT_CTRL = 0x80;
 const uint8_t KEY_LEFT_SHIFT = 0x81;
@@ -100,24 +100,24 @@ const uint8_t KEY_NUM_PLUS = 0xDF;
 const uint8_t KEY_NUM_ENTER = 0xE0;
 const uint8_t KEY_NUM_PERIOD = 0xEB;
 
-typedef uint8_t MediaKeyReport[2];
+typedef uint16_t MediaKey;
 
-const MediaKeyReport KEY_MEDIA_NEXT_TRACK = {1, 0};
-const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK = {2, 0};
-const MediaKeyReport KEY_MEDIA_STOP = {4, 0};
-const MediaKeyReport KEY_MEDIA_PLAY_PAUSE = {8, 0};
-const MediaKeyReport KEY_MEDIA_MUTE = {16, 0};
-const MediaKeyReport KEY_MEDIA_VOLUME_UP = {32, 0};
-const MediaKeyReport KEY_MEDIA_VOLUME_DOWN = {64, 0};
-const MediaKeyReport KEY_MEDIA_WWW_HOME = {128, 0};
-const MediaKeyReport KEY_MEDIA_LOCAL_MACHINE_BROWSER = {0, 1}; // Opens "My Computer" on Windows
-const MediaKeyReport KEY_MEDIA_CALCULATOR = {0, 2};
-const MediaKeyReport KEY_MEDIA_WWW_BOOKMARKS = {0, 4};
-const MediaKeyReport KEY_MEDIA_WWW_SEARCH = {0, 8};
-const MediaKeyReport KEY_MEDIA_WWW_STOP = {0, 16};
-const MediaKeyReport KEY_MEDIA_WWW_BACK = {0, 32};
-const MediaKeyReport KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION = {0, 64}; // Media Selection
-const MediaKeyReport KEY_MEDIA_EMAIL_READER = {0, 128};
+const MediaKey KEY_MEDIA_NEXT_TRACK = 0x00B5;
+const MediaKey KEY_MEDIA_PREVIOUS_TRACK = 0x00B6;
+const MediaKey KEY_MEDIA_STOP = 0x00B7;
+const MediaKey KEY_MEDIA_PLAY_PAUSE = 0x00CD;
+const MediaKey KEY_MEDIA_MUTE = 0x00E2;
+const MediaKey KEY_MEDIA_VOLUME_UP = 0x00E9;
+const MediaKey KEY_MEDIA_VOLUME_DOWN = 0x00EA;
+const MediaKey KEY_MEDIA_WWW_HOME = 0x0223;
+const MediaKey KEY_MEDIA_LOCAL_MACHINE_BROWSER = 0x0194; // Opens "My Computer" on Windows
+const MediaKey KEY_MEDIA_CALCULATOR = 0x0192;
+const MediaKey KEY_MEDIA_WWW_BOOKMARKS = 0x022A;
+const MediaKey KEY_MEDIA_WWW_SEARCH = 0x0221;
+const MediaKey KEY_MEDIA_WWW_STOP = 0x0226;
+const MediaKey KEY_MEDIA_WWW_BACK = 0x0224;
+const MediaKey KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION = 0x0183; // Media Selection
+const MediaKey KEY_MEDIA_EMAIL_READER = 0x018A;
 
 
 //  Low level key report: up to 6 keys and shift, ctrl etc at once
@@ -138,7 +138,7 @@ private:
   BLEAdvertising*    advertising;
   BLEServer*         pServer;
   KeyReport          _keyReport;
-  MediaKeyReport     _mediaKeyReport;
+  MediaKey           _mediaKey;
   std::string        deviceName;
   std::string        deviceManufacturer;
   uint8_t            batteryLevel;
@@ -155,13 +155,13 @@ public:
   void begin(void);
   void end(void);
   void sendReport(KeyReport* keys);
-  void sendReport(MediaKeyReport* keys);
+  void sendReport(MediaKey* keys);
   size_t press(uint8_t k);
-  size_t press(const MediaKeyReport k);
+  size_t press(MediaKey k);
   size_t release(uint8_t k);
-  size_t release(const MediaKeyReport k);
+  size_t release(MediaKey k);
   size_t write(uint8_t c);
-  size_t write(const MediaKeyReport c);
+  size_t write(MediaKey c);
   size_t write(const uint8_t *buffer, size_t size);
   void releaseAll(void);
   bool isConnected(void);
