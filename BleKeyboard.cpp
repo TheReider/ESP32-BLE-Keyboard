@@ -75,32 +75,19 @@ static const uint8_t _hidReportDescriptor[] = {
   HIDINPUT(1),        0x00,          //   INPUT (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
   END_COLLECTION(0),                 // END_COLLECTION
   // ------------------------------------------------- Media Keys
+  // Single 16-bit usage ID, Windows-compatible order (HijelHID_BLEKeyboard style)
   USAGE_PAGE(1),      0x0C,          // USAGE_PAGE (Consumer)
   USAGE(1),           0x01,          // USAGE (Consumer Control)
   COLLECTION(1),      0x01,          // COLLECTION (Application)
-  REPORT_ID(1),       MEDIA_KEYS_ID, //   REPORT_ID (3)
+  REPORT_ID(1),       MEDIA_KEYS_ID, //   REPORT_ID (2)
   USAGE_PAGE(1),      0x0C,          //   USAGE_PAGE (Consumer)
-  LOGICAL_MINIMUM(1), 0x00,          //   LOGICAL_MINIMUM (0)
-  LOGICAL_MAXIMUM(1), 0x01,          //   LOGICAL_MAXIMUM (1)
-  REPORT_SIZE(1),     0x01,          //   REPORT_SIZE (1)
-  REPORT_COUNT(1),    0x10,          //   REPORT_COUNT (16)
-  USAGE(1),           0xB5,          //   USAGE (Scan Next Track)     ; bit 0: 1
-  USAGE(1),           0xB6,          //   USAGE (Scan Previous Track) ; bit 1: 2
-  USAGE(1),           0xB7,          //   USAGE (Stop)                ; bit 2: 4
-  USAGE(1),           0xCD,          //   USAGE (Play/Pause)          ; bit 3: 8
-  USAGE(1),           0xE2,          //   USAGE (Mute)                ; bit 4: 16
-  USAGE(1),           0xE9,          //   USAGE (Volume Increment)    ; bit 5: 32
-  USAGE(1),           0xEA,          //   USAGE (Volume Decrement)    ; bit 6: 64
-  USAGE(2),           0x23, 0x02,    //   Usage (WWW Home)            ; bit 7: 128
-  USAGE(2),           0x94, 0x01,    //   Usage (My Computer) ; bit 0: 1
-  USAGE(2),           0x92, 0x01,    //   Usage (Calculator)  ; bit 1: 2
-  USAGE(2),           0x2A, 0x02,    //   Usage (WWW fav)     ; bit 2: 4
-  USAGE(2),           0x21, 0x02,    //   Usage (WWW search)  ; bit 3: 8
-  USAGE(2),           0x26, 0x02,    //   Usage (WWW stop)    ; bit 4: 16
-  USAGE(2),           0x24, 0x02,    //   Usage (WWW back)    ; bit 5: 32
-  USAGE(2),           0x83, 0x01,    //   Usage (Media sel)   ; bit 6: 64
-  USAGE(2),           0x8A, 0x01,    //   Usage (Mail)        ; bit 7: 128
-  HIDINPUT(1),        0x02,          //   INPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  LOGICAL_MINIMUM(2), 0x00, 0x00,    //   LOGICAL_MINIMUM (0)
+  LOGICAL_MAXIMUM(2), 0xFF, 0x03,    //   LOGICAL_MAXIMUM (0x3FF)
+  REPORT_SIZE(1),     0x10,          //   REPORT_SIZE (16 bits)
+  REPORT_COUNT(1),    0x01,          //   REPORT_COUNT (1)
+  USAGE_MINIMUM(2),   0x00, 0x00,    //   USAGE_MINIMUM (0x0000)
+  USAGE_MAXIMUM(2),   0xFF, 0x03,    //   USAGE_MAXIMUM (0x03FF)
+  HIDINPUT(1),        0x00,          //   INPUT (Data,Ary,Abs)
   END_COLLECTION(0)                  // END_COLLECTION
 };
 
@@ -225,11 +212,11 @@ void BleKeyboard::sendReport(KeyReport* keys)
   }	
 }
 
-void BleKeyboard::sendReport(MediaKeyReport* keys)
+void BleKeyboard::sendReport(MediaKey* keys)
 {
   if (this->isConnected())
   {
-    this->inputMediaKeys->setValue((uint8_t*)keys, sizeof(MediaKeyReport));
+    this->inputMediaKeys->setValue((uint8_t*)keys, sizeof(MediaKey));
     this->inputMediaKeys->notify();
 #if defined(USE_NIMBLE)        
     //vTaskDelay(delayTicks);
@@ -423,17 +410,12 @@ size_t BleKeyboard::press(uint8_t k)
 	return 1;
 }
 
-size_t BleKeyboard::press(const MediaKeyReport k)
+size_t BleKeyboard::press(MediaKey k)
 {
-    uint16_t k_16 = k[1] | (k[0] << 8);
-    uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
+    _mediaKey = k;
 
-    mediaKeyReport_16 |= k_16;
-    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_16 & 0xFF00) >> 8);
-    _mediaKeyReport[1] = (uint8_t)(mediaKeyReport_16 & 0x00FF);
-
-	sendReport(&_mediaKeyReport);
-	return 1;
+	sendReport(&_mediaKey);
+    return 1;
 }
 
 // release() takes the specified key out of the persistent key report and
@@ -470,15 +452,13 @@ size_t BleKeyboard::release(uint8_t k)
 	return 1;
 }
 
-size_t BleKeyboard::release(const MediaKeyReport k)
+size_t BleKeyboard::release(MediaKey k)
 {
-    uint16_t k_16 = k[1] | (k[0] << 8);
-    uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
-    mediaKeyReport_16 &= ~k_16;
-    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_16 & 0xFF00) >> 8);
-    _mediaKeyReport[1] = (uint8_t)(mediaKeyReport_16 & 0x00FF);
+    if (_mediaKey == k) {
+		_mediaKey = 0;
+	}
 
-	sendReport(&_mediaKeyReport);
+	sendReport(&_mediaKey);
 	return 1;
 }
 
@@ -491,22 +471,21 @@ void BleKeyboard::releaseAll(void)
 	_keyReport.keys[4] = 0;
 	_keyReport.keys[5] = 0;
 	_keyReport.modifiers = 0;
-    _mediaKeyReport[0] = 0;
-    _mediaKeyReport[1] = 0;
+    _mediaKey = 0;
 	sendReport(&_keyReport);
-	sendReport(&_mediaKeyReport);
+	sendReport(&_mediaKey);
 }
 
 size_t BleKeyboard::write(uint8_t c)
 {
-	uint8_t p = press(c);  // Keydown
+	size_t p = press(c);   // Keydown
 	release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
 
-size_t BleKeyboard::write(const MediaKeyReport c)
+size_t BleKeyboard::write(MediaKey c)
 {
-	uint16_t p = press(c);  // Keydown
+	size_t p = press(c);   // Keydown
 	release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
