@@ -20,6 +20,7 @@ This section lists the changes made in this fork, one entry per commit.
    - `MediaKey` is now an 16-bit integer.
    - `press()` / `release()` / `write()` for media keys now take a `MediaKey` (single usage code) instead of a `MediaKeyReport`.
    - Media key size didn't changed (from 2 bytes bitmask to 2 bytes usage code).
+5. **Extract key constants into BleKeyboardKeys.h and BleKeyboardMediaKeys.h and expand media key coverage**
 
 ## Migration
 
