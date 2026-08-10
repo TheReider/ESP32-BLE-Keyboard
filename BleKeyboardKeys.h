@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (c) 2019 T-vK (upstream: https://github.com/T-vK/ESP32-BLE-Keyboard)
+// Copyright (c) 2026 TheReider
+// Key constants derived from the Arduino Keyboard library (LGPL-3.0).
+// See the LICENSE file and the License section of the README for details.
+
 #ifndef ESP32_BLE_KEYBOARD_KEYS_H
 #define ESP32_BLE_KEYBOARD_KEYS_H
 

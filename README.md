@@ -1,199 +1,233 @@
-# ESP32 BLE Keyboard library
+# ESP32 BLE Keyboard
 
-**This is a fork of [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard).**
+Bluetooth LE HID keyboard library for the ESP32 (Arduino IDE compatible).
 
-The original upstream project has not seen active development for a long time. This fork was created to continue maintenance and development independently.
+**This is a maintained fork of [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard).** The original project is no longer actively developed. This fork continues maintenance with bug fixes and compatibility updates for current ESP32 Arduino cores.
 
-For the original project and its full history, please visit the original repository (full URL: https://github.com/T-vK/ESP32-BLE-Keyboard )
+For the original project and its history, see [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard).
 
-
-## Changes
-
-This section lists the changes made in this fork, one entry per commit.
-
-1. **Changed keyboard_id maximum to support F13 - F24**
-2. **Added BLEServer pointer as member class to deinitialize BLE (close bluetooth connection) with end()**
-3. **Dynamically adjust datatype from std::String to String if the ESP32-Arduino-Core is above v3.x (tested for 3.3.10)**
-   - A release `v0.3.3` was created after this change.
-4. **[BREAKING] Reworked media key handling**
-   - Media keys now use real HID usage codes instead of bitmask values.
-   - `MediaKey` is now an 16-bit integer.
-   - `press()` / `release()` / `write()` for media keys now take a `MediaKey` (single usage code) instead of a `MediaKeyReport`.
-   - Media key size didn't changed (from 2 bytes bitmask to 2 bytes usage code).
-5. **Extract key constants into BleKeyboardKeys.h and BleKeyboardMediaKeys.h and expand media key coverage**
-
-## Migration
-
-If you are upgrading from the original upstream library or from this fork before the media key rework, note the following API changes:
-
-- Use the existing constants like `KEY_MEDIA_PLAY_PAUSE`, `KEY_MEDIA_VOLUME_UP`, etc. unchanged.
-- `MediaKeyReport` no longer exists, use `MediaKey` instead.
+**Issues and support:** Please use [this repository](https://github.com/TheReider/ESP32-BLE-Keyboard/issues), not the upstream repo.
 
 ---
-<br><br><br>
-
-
-## Original README (Upstream Documentation)
-
-> The rest of this document is the original README from the upstream project. It is kept here for reference. Some sections, especially regarding media keys, may be outdated due to breaking changes in this fork.
-
-This library allows you to make the ESP32 act as a Bluetooth Keyboard and control what it does.  
-You might also be interested in:
-- [ESP32-BLE-Mouse](https://github.com/T-vK/ESP32-BLE-Mouse)
-- [ESP32-BLE-Gamepad](https://github.com/lemmingDev/ESP32-BLE-Gamepad)
-
 
 ## Features
 
- - [x] Send key strokes
- - [x] Send text
- - [x] Press/release individual keys
- - [x] Media keys are supported
- - [ ] Read Numlock/Capslock/Scrolllock state
- - [x] Set battery level (basically works, but doesn't show up in Android's status bar)
- - [x] Compatible with Android
- - [x] Compatible with Windows
- - [x] Compatible with Linux
- - [x] Compatible with MacOS X (not stable, some people have issues, doesn't work with old devices)
- - [x] Compatible with iOS (not stable, some people have issues, doesn't work with old devices)
+- Send keystrokes and text (`print`, `write`)
+- Press and release individual keys and modifiers
+- Media / consumer keys via HID usage codes
+- Function keys F1–F24 and numpad keys
+- Set battery level, device name, and manufacturer
+- `end()` to disconnect and stop advertising
+- Intended for use with BLE-capable hosts (Windows, Linux, macOS, Android, iOS — see [Platform compatibility](#platform-compatibility))
+
+## Requirements
+
+| Requirement | Notes |
+|---|---|
+| [ESP32 Arduino Core](https://github.com/espressif/arduino-esp32) | 2.x and **3.x** supported (3.x compatibility fixed in v0.3.3+) |
+| ESP32 board with BLE | All ESP32 variants with BLE except ESP32-S2 |
 
 ## Installation
-- (Make sure you can use the ESP32 with the Arduino IDE. [Instructions can be found here.](https://github.com/espressif/arduino-esp32#installation-instructions))
-- [Download the latest release of this library from the release page.](https://github.com/T-vK/ESP32-BLE-Keyboard/releases)
-- In the Arduino IDE go to "Sketch" -> "Include Library" -> "Add .ZIP Library..." and select the file you just downloaded.
-- You can now go to "File" -> "Examples" -> "ESP32 BLE Keyboard" and select any of the examples to get started.
 
-## Example
+This library is **not** available in the Arduino Library Manager. Install it manually:
 
-``` C++
-/**
- * This example turns the ESP32 into a Bluetooth LE keyboard that writes the words, presses Enter, presses a media key and then Ctrl+Alt+Delete
- */
+1. Install the [ESP32 board support](https://github.com/espressif/arduino-esp32#installation-instructions) in the Arduino IDE.
+2. Download the [latest release](https://github.com/TheReider/ESP32-BLE-Keyboard/releases) from this repository.
+3. In the Arduino IDE: **Sketch → Include Library → Add .ZIP Library…** and select the downloaded file.
+4. Open **File → Examples → ESP32 BLE Keyboard → SendKeyStrokes** to get started.
+
+---
+
+## Quick Start
+
+```cpp
 #include <BleKeyboard.h>
 
 BleKeyboard bleKeyboard;
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("Starting BLE work!");
   bleKeyboard.begin();
 }
 
 void loop() {
-  if(bleKeyboard.isConnected()) {
-    Serial.println("Sending 'Hello world'...");
+  if (bleKeyboard.isConnected()) {
+    Serial.println("Connected — sending keystrokes");
     bleKeyboard.print("Hello world");
-
-    delay(1000);
-
-    Serial.println("Sending Enter key...");
     bleKeyboard.write(KEY_RETURN);
-
-    delay(1000);
-
-    Serial.println("Sending Play/Pause media key...");
     bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
-
-    delay(1000);
-    
-   //
-   // Below is an example of pressing multiple keyboard modifiers 
-   // which by default is commented out. 
-   // 
-   /* Serial.println("Sending Ctrl+Alt+Delete...");
-    bleKeyboard.press(KEY_LEFT_CTRL);
-    bleKeyboard.press(KEY_LEFT_ALT);
-    bleKeyboard.press(KEY_DELETE);
-    delay(100);
-    bleKeyboard.releaseAll();
-    */
-
+  } else {
+    Serial.println("Waiting for connection...");
   }
-  Serial.println("Waiting 5 seconds...");
   delay(5000);
 }
 ```
 
-## API docs
-The BleKeyboard interface is almost identical to the Keyboard Interface, so you can use documentation right here:
-https://www.arduino.cc/reference/en/language/functions/usb/keyboard/
+### Pairing
 
-Just remember that you have to use `bleKeyboard` instead of just `Keyboard` and you need these two lines at the top of your script:
-```
-#include <BleKeyboard.h>
-BleKeyboard bleKeyboard;
-```
+1. Flash the sketch to your ESP32.
+2. Open the Bluetooth settings on your host device.
+3. Look for **ESP32 Keyboard** (or your custom device name) and pair/connect.
+4. Once connected, `isConnected()` returns `true` and keystrokes are sent.
 
-In addition to that you can send media keys (which is not possible with the USB keyboard library). Supported are the following:
-- KEY_MEDIA_NEXT_TRACK
-- KEY_MEDIA_PREVIOUS_TRACK
-- KEY_MEDIA_STOP
-- KEY_MEDIA_PLAY_PAUSE
-- KEY_MEDIA_MUTE
-- KEY_MEDIA_VOLUME_UP
-- KEY_MEDIA_VOLUME_DOWN
-- KEY_MEDIA_WWW_HOME
-- KEY_MEDIA_LOCAL_MACHINE_BROWSER // Opens "My Computer" on Windows
-- KEY_MEDIA_CALCULATOR
-- KEY_MEDIA_WWW_BOOKMARKS
-- KEY_MEDIA_WWW_SEARCH
-- KEY_MEDIA_WWW_STOP
-- KEY_MEDIA_WWW_BACK
-- KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION // Media Selection
-- KEY_MEDIA_EMAIL_READER
+If you change the HID descriptor (e.g. after upgrading to v0.4.0), remove the old pairing on your host and connect again.
 
-There is also Bluetooth specific information that you can set (optional):
-Instead of `BleKeyboard bleKeyboard;` you can do `BleKeyboard bleKeyboard("Bluetooth Device Name", "Bluetooth Device Manufacturer", 100);`. (Max lenght is 15 characters, anything beyond that will be truncated.)  
-The third parameter is the initial battery level of your device. To adjust the battery level later on you can simply call e.g.  `bleKeyboard.setBatteryLevel(50)` (set battery level to 50%).  
-By default the battery level will be set to 100%, the device name will be `ESP32 Bluetooth Keyboard` and the manufacturer will be `Espressif`.  
-There is also a `setDelay` method to set a delay between each key event. E.g. `bleKeyboard.setDelay(10)` (10 milliseconds). The default is `8`.  
-This feature is meant to compensate for some applications and devices that can't handle fast input and will skip letters if too many keys are sent in a small time frame.  
+---
 
-## NimBLE-Mode
-The NimBLE mode enables a significant saving of RAM and FLASH memory.
+## Platform compatibility
 
-### Comparison (SendKeyStrokes.ino at compile-time)
+> **Disclaimer:** BLE HID keyboard support varies by operating system, device, and OS version. This fork is actively tested on **Windows** only. Android, Linux, macOS, and iOS may work but are not regularly verified here. **Always test on your target platform before relying on this library in a project.**
 
-**Standard**
-```
-RAM:   [=         ]   9.3% (used 30548 bytes from 327680 bytes)
-Flash: [========  ]  75.8% (used 994120 bytes from 1310720 bytes)
+| Platform | Status |
+|---|---|
+| Windows | Tested |
+| Linux | Community-reported; not regularly tested |
+| macOS | Community-reported; not regularly tested |
+| Android | Community-reported; not regularly tested |
+| iOS | Community-reported; not regularly tested |
+
+If you have tested this library on another platform, please [open an issue](https://github.com/TheReider/ESP32-BLE-Keyboard/issues) or pull request to update this table.
+
+---
+
+## API
+
+The `BleKeyboard` interface is similar to the [Arduino Keyboard library](https://www.arduino.cc/reference/en/language/functions/usb/keyboard/). Use `bleKeyboard` instead of `Keyboard`, and include `BleKeyboard.h`.
+
+### Constructor
+
+```cpp
+BleKeyboard bleKeyboard;                                              // defaults
+BleKeyboard bleKeyboard("My Keyboard", "My Company", 100);            // name, manufacturer, battery %
 ```
 
-**NimBLE mode**
+| Parameter | Default | Description |
+|---|---|---|
+| `deviceName` | `"ESP32 Keyboard"` | Name shown when pairing (max 15 characters; longer names are truncated) |
+| `deviceManufacturer` | `"Espressif"` | Manufacturer string |
+| `batteryLevel` | `100` | Initial battery level (1–100) |
+
+### Lifecycle
+
+| Method | Description |
+|---|---|
+| `begin()` | Start BLE advertising and make the device discoverable |
+| `end()` | Disconnect, stop advertising, and deinitialize BLE |
+| `isConnected()` | Returns `true` when a host is connected |
+
+### Typing and keys
+
+| Method | Description |
+|---|---|
+| `print(text)` | Type a string (handles case and punctuation) |
+| `write(key)` | Press and release a single key or media key |
+| `press(key)` | Hold a key down |
+| `release(key)` | Release a held key |
+| `releaseAll()` | Release all held keys (keyboard and media) |
+| `setDelay(ms)` | Delay between key events (default: 7 ms) |
+
+Keyboard key constants are defined in `BleKeyboardKeys.h` (modifiers, arrows, F1–F24, numpad, etc.).
+
+Media key constants are defined in `BleKeyboardMediaKeys.h` and use the `KEY_MEDIA_*` prefix, for example:
+
+- `KEY_MEDIA_PLAY_PAUSE`, `KEY_MEDIA_VOLUME_UP`, `KEY_MEDIA_VOLUME_DOWN`, `KEY_MEDIA_MUTE`
+- `KEY_MEDIA_NEXT_TRACK`, `KEY_MEDIA_PREVIOUS_TRACK`, `KEY_MEDIA_STOP`
+- `KEY_MEDIA_BRIGHTNESS_UP`, `KEY_MEDIA_BRIGHTNESS_DOWN`
+- `KEY_MEDIA_WWW_HOME`, `KEY_MEDIA_WWW_SEARCH`, `KEY_MEDIA_CALCULATOR`
+
+See `BleKeyboardMediaKeys.h` for the full list.
+
+### Bluetooth settings
+
+| Method | Description |
+|---|---|
+| `setBatteryLevel(level)` | Update reported battery percentage |
+| `setName(name)` | Change device name (call before `begin()`) |
+| `set_vendor_id(vid)` | Set USB vendor ID (call before `begin()`) |
+| `set_product_id(pid)` | Set USB product ID (call before `begin()`) |
+| `set_version(version)` | Set USB version (call before `begin()`) |
+
+The `set_vendor_id`, `set_product_id`, and `set_version` methods use snake_case for historical compatibility with the original library.
+
+### Modifier example
+
+```cpp
+bleKeyboard.press(KEY_LEFT_CTRL);
+bleKeyboard.press(KEY_LEFT_ALT);
+bleKeyboard.press(KEY_DELETE);
+delay(100);
+bleKeyboard.releaseAll();
 ```
-RAM:   [=         ]   8.3% (used 27180 bytes from 327680 bytes)
-Flash: [====      ]  44.2% (used 579158 bytes from 1310720 bytes)
-```
 
-### Comparison (SendKeyStrokes.ino at run-time)
+---
 
-|   | Standard | NimBLE mode | difference
-|---|--:|--:|--:|
-| `ESP.getHeapSize()`   | 296.804 | 321.252 | **+ 24.448**  |
-| `ESP.getFreeHeap()`   | 143.572 | 260.764 | **+ 117.192** |
-| `ESP.getSketchSize()` | 994.224 | 579.264 | **- 414.960** |
+## Troubleshooting
 
-## How to activate NimBLE mode?
+| Problem | Solution |
+|---|---|
+| Keystrokes are not sent | Wait until `isConnected()` is `true` before calling `print()` / `write()` |
+| Device not visible after flashing | Call `begin()` in `setup()`; ensure no other BLE sketch is running |
+| Media keys stopped working after upgrade | Upgrade to v0.4.0+ and **re-pair** the device so the new HID descriptor is applied |
+| `std::string` / `String` compile errors (ESP32 core 3.x) | Use **v0.3.3** or later from this repository |
+| Name or USB IDs not applied | Call `setName()`, `set_vendor_id()`, etc. **before** `begin()` |
+| Keys are skipped or dropped | Increase the delay with `setDelay(ms)` (default: 7 ms) |
 
-### ArduinoIDE: 
-Uncomment the first line in BleKeyboard.h
-```C++
-#define USE_NIMBLE
-```
+---
 
-### PlatformIO:
-Change your `platformio.ini` to the following settings
-```ini
-lib_deps = 
-  NimBLE-Arduino
+## Migration from T-vK/ESP32-BLE-Keyboard
 
-build_flags = 
-  -D USE_NIMBLE
-```
+This fork is intended as a drop-in replacement for most sketches. Two areas changed:
+
+### ESP32 Arduino Core 3.x
+
+If you see `std::string` / `String` conversion errors with core 3.x, upgrade to **v0.3.3** or later from this repository.
+
+### Media keys (v0.4.0 — breaking change)
+
+Media keys now use real HID Consumer Control usage codes instead of bitmask values.
+
+- Constant names like `KEY_MEDIA_PLAY_PAUSE` are unchanged.
+- `MediaKeyReport` was removed; use `MediaKey` (`uint16_t`) instead.
+- `press()`, `release()`, and `write()` for media keys take a single `MediaKey` value.
+
+After upgrading to v0.4.0, **re-pair** the device with your host so the updated HID descriptor is applied.
+
+---
+
+## NimBLE mode (optional)
+
+The library includes optional support for [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) — an alternative Bluetooth stack that uses less RAM and flash. This comes from the original project and is **not actively tested in this fork**.
+
+To enable it, uncomment `#define USE_NIMBLE` at the top of `BleKeyboard.h` and install the NimBLE-Arduino library in the Arduino IDE.
+
+---
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0). See the [LICENSE](LICENSE) file for the full text.
+
+### Why GPL-3.0 — code provenance
+
+This repository contains code from multiple sources, and GPL-3.0 is the license that covers all of them:
+
+**Upstream (T-vK):** The original [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard) has no `LICENSE` file. However, in [issue #60](https://github.com/T-vK/ESP32-BLE-Keyboard/issues/60), T-vK granted permission for his code (October 2021):
+
+> "In regards to the code that I wrote, you can use that as if licensed under MIT or GPLv3. You're probably fine if you consider the whole project GPLv3."
+
+This fork relies on that permission and, as T-vK himself suggested, applies **GPLv3** to the project as a whole. Copyright in the upstream code remains with T-vK (copyright © 2019 T-vK).
+
+**chegewara:** Parts of the upstream HID code trace back to [chegewara](https://github.com/chegewara), who stated in the same issue that his code "can be considered MIT or Apache". Both licenses permit inclusion in a GPLv3 work.
+
+**Arduino Keyboard library:** The keyboard logic derives from the [Arduino Keyboard library](https://github.com/arduino-libraries/Keyboard) (**LGPL-3.0**). LGPL-3.0 code may be conveyed under GPL-3.0.
+
+**Fork modifications (TheReider):** Bug fixes, compatibility updates, documentation, and other changes made in this repository (copyright © 2026 TheReider) are likewise licensed under GPL-3.0.
+
+Note that GPL-3.0 is a copyleft license: if you distribute a project that includes this library, the project must be licensed under GPL-3.0 as well and its source code must be made available. See the [LICENSE](LICENSE) file for the exact terms.
+
+---
 
 ## Credits
 
-Credits to [chegewara](https://github.com/chegewara) and [the authors of the USB keyboard library](https://github.com/arduino-libraries/Keyboard/) as this project is heavily based on their work!  
-Also, credits to [duke2421](https://github.com/T-vK/ESP32-BLE-Keyboard/issues/1) who helped a lot with testing, debugging and fixing the device descriptor!
-And credits to [sivar2311](https://github.com/sivar2311) for adding NimBLE support, greatly reducing the memory footprint, fixing advertising issues and for adding the `setDelay` method.
+Based on [T-vK/ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard), with work by [chegewara](https://github.com/chegewara), [duke2421](https://github.com/T-vK/ESP32-BLE-Keyboard/issues/1), and [sivar2311](https://github.com/sivar2311) (NimBLE support).
+
+Maintained by [TheReider](https://github.com/TheReider).
